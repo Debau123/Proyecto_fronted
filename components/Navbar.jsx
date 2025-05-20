@@ -43,6 +43,7 @@ export default function Navbar() {
             <Link href="/admin/carta" className="hover:underline">Carta</Link>
             <Link href="/admin/pedidos" className="hover:underline">Pedidos</Link>
             <Link href="/admin/inventario" className="hover:underline">Inventario</Link>
+             <Link href="/admin/usuarios" className="hover:underline">Usuarios</Link>
             <button onClick={handleLogout} className="hover:underline">Logout</button>
           </div>
         </div>
