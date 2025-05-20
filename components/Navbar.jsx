@@ -1,24 +1,26 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://restoratech-backend-production.up.railway.app";
+
 export default function Navbar() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(undefined); // undefined para diferenciar entre cargando y null
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) return setUser(null);
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
+    fetch(`${API_URL}/api/users/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => res.ok ? res.json() : null)
-      .then((data) => setUser(data))
+      .then((data) => setUser(data || null))
       .catch(() => {
         localStorage.removeItem('token');
         setUser(null);
@@ -31,7 +33,10 @@ export default function Navbar() {
     router.push('/');
   };
 
-  // ✅ NAVBAR PARA ADMINISTRADOR
+  // ⚠ Mientras carga el user, no mostrar nada
+  if (user === undefined) return null;
+
+  // ✅ NAVBAR ADMIN
   if (user?.rol === 'administrador') {
     return (
       <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur shadow">
@@ -43,7 +48,7 @@ export default function Navbar() {
             <Link href="/admin/carta" className="hover:underline">Carta</Link>
             <Link href="/admin/pedidos" className="hover:underline">Pedidos</Link>
             <Link href="/admin/inventario" className="hover:underline">Inventario</Link>
-             <Link href="/admin/usuarios" className="hover:underline">Usuarios</Link>
+            <Link href="/admin/usuarios" className="hover:underline">Usuarios</Link>
             <button onClick={handleLogout} className="hover:underline">Logout</button>
           </div>
         </div>
@@ -51,7 +56,7 @@ export default function Navbar() {
     );
   }
 
-  // ✅ NAVBAR PARA CLIENTE O NO LOGUEADO
+  // ✅ NAVBAR CLIENTE O NO LOGUEADO
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-black/50 backdrop-blur-md shadow-md">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center text-white font-semibold">
