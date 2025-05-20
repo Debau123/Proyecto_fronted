@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
-import { API_URL } from "../lib/api";
+
+const API_URL = "https://restoratech-backend-production.up.railway.app";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -72,7 +73,6 @@ export default function Login() {
           Entrar
         </button>
 
-        {/* Botón de registro */}
         <p className="text-center text-sm mt-4">
           ¿No tienes cuenta?{" "}
           <a

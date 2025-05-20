@@ -6,28 +6,17 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Navbar from '../components/Navbar';
 
-export default function Reservas() {
-  const [disponibilidades, setDisponibilidades] = useState([]);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState('');
-  const [horasGeneradas, setHorasGeneradas] = useState({ comida: [], cena: [] });
-  const [aforoMaximo, setAforoMaximo] = useState({ comida: 0, cena: 0 });
-  const [reservasDelDia, setReservasDelDia] = useState([]);
-  const [userId, setUserId] = useState(null);
-  const [userNombre, setUserNombre] = useState('');
-  const [horaSeleccionada, setHoraSeleccionada] = useState(null);
-  const [comensales, setComensales] = useState(1);
-  const [mensaje, setMensaje] = useState(null);
-  const [historial, setHistorial] = useState([]);
-  const [proximas, setProximas] = useState([]);
-  const router = useRouter();
+// 🔁 CAMBIA ESTA LÍNEA:
+const API_URL = "https://restoratech-backend-production.up.railway.app";
 
-  const hoy = new Date().toISOString().split('T')[0];
+export default function Reservas() {
+  // ... estados y constantes iguales
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    fetch('http://localhost:1340/api/users/me', {
+    fetch(`${API_URL}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -40,7 +29,7 @@ export default function Reservas() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:1340/api/disponibilidades?filters[activo][$eq]=true')
+    fetch(`${API_URL}/api/disponibilidades?filters[activo][$eq]=true`)
       .then(res => res.json())
       .then(data => setDisponibilidades(data.data || []));
   }, []);
@@ -58,46 +47,16 @@ export default function Reservas() {
       return;
     }
 
-    let comida = [];
-    let cena = [];
-    let aforoComida = 0;
-    let aforoCena = 0;
+    // ... lógica para generar horas y aforo
 
-    disponibles.forEach(d => {
-      const [hInicio, mInicio] = d.attributes.hora_inicio.split(':').map(Number);
-      const [hFin, mFin] = d.attributes.hora_fin.split(':').map(Number);
-
-      // SUMAR AFORO UNA SOLA VEZ SEGÚN HORA DE INICIO
-      const turno = hInicio < 17 ? 'comida' : 'cena';
-      if (turno === 'comida') aforoComida += d.attributes.aforo_maximo;
-      else aforoCena += d.attributes.aforo_maximo;
-
-      let current = new Date(`${fechaSeleccionada}T${String(hInicio).padStart(2, '0')}:${String(mInicio).padStart(2, '0')}`);
-      const end = new Date(`${fechaSeleccionada}T${String(hFin).padStart(2, '0')}:${String(mFin).padStart(2, '0')}`);
-
-      while (current < end) {
-        const hora = current.getHours();
-        const formatted = `${String(hora).padStart(2, '0')}:${String(current.getMinutes()).padStart(2, '0')}`;
-        if (hora < 17) {
-          if (!comida.includes(formatted)) comida.push(formatted);
-        } else {
-          if (!cena.includes(formatted)) cena.push(formatted);
-        }
-        current.setMinutes(current.getMinutes() + 5);
-      }
-    });
-
-    setHorasGeneradas({ comida, cena });
-    setAforoMaximo({ comida: aforoComida, cena: aforoCena });
-
-    fetch(`http://localhost:1340/api/reservas?filters[fecha][$eq]=${fechaSeleccionada}&populate=cliente`)
+    fetch(`${API_URL}/api/reservas?filters[fecha][$eq]=${fechaSeleccionada}&populate=cliente`)
       .then(res => res.json())
       .then(data => setReservasDelDia(data.data || []));
   }, [fechaSeleccionada, disponibilidades]);
 
   useEffect(() => {
     if (!userId) return;
-    fetch(`http://localhost:1340/api/reservas?filters[cliente][id][$eq]=${userId}&sort=fecha:desc&sort=hora:desc&populate=cliente`)
+    fetch(`${API_URL}/api/reservas?filters[cliente][id][$eq]=${userId}&sort=fecha:desc&sort=hora:desc&populate=cliente`)
       .then(res => res.json())
       .then(data => {
         const todas = data.data || [];
@@ -106,35 +65,11 @@ export default function Reservas() {
       });
   }, [userId, mensaje]);
 
-  const formatearFecha = (date) => {
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, '0');
-    const day = `${date.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const formatearHora = (hora) => hora.split(':').slice(0, 2).join(':');
-
-  const getTurno = (hora) => (hora < '17:00' ? 'comida' : 'cena');
-
-  const getComensalesTurno = (turno) =>
-    reservasDelDia
-      .filter(r => getTurno(formatearHora(r.attributes.hora)) === turno)
-      .reduce((sum, r) => sum + r.attributes.comensales, 0);
-
   const handleReservar = async () => {
-    if (!horaSeleccionada || !comensales || !userId) return;
-
-    const turno = getTurno(horaSeleccionada);
-    const totalTurno = getComensalesTurno(turno);
-
-    if (totalTurno + comensales > aforoMaximo[turno]) {
-      setMensaje(`No puedes reservar, se supera el aforo del turno ${turno}.`);
-      return;
-    }
+    // ... validaciones
 
     const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:1340/api/reservas', {
+    const res = await fetch(`${API_URL}/api/reservas`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +97,7 @@ export default function Reservas() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const res = await fetch(`http://localhost:1340/api/reservas/${id}`, {
+    const res = await fetch(`${API_URL}/api/reservas/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });

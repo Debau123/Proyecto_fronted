@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
-import { API_URL } from "../lib/api";
+
+const API_URL = "https://restoratech-backend-production.up.railway.app";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -8,12 +9,12 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [formularioVisible, setFormularioVisible] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 👈 estado para bloquear botón
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
-    setIsSubmitting(true); // 👈 empieza envío
+    setIsSubmitting(true);
 
     try {
       await axios.post(`${API_URL}/api/auth/local/register`, {
@@ -23,7 +24,7 @@ export default function Register() {
         rol: "cliente",
       });
 
-      setFormularioVisible(false); // 👈 oculta formulario tras éxito
+      setFormularioVisible(false);
     } catch (err) {
       console.error("Error de registro:", err);
 
@@ -38,7 +39,7 @@ export default function Register() {
         setError("⚠️ Ha ocurrido un error inesperado al registrar.");
       }
     } finally {
-      setIsSubmitting(false); // 👈 termina envío
+      setIsSubmitting(false);
     }
   };
 
@@ -48,7 +49,6 @@ export default function Register() {
       style={{ backgroundImage: `url('/registre.jpg')` }}
     >
       <div className="w-full max-w-md">
-        {/* FORMULARIO */}
         <form
           onSubmit={handleRegister}
           className={`transition-all duration-700 ease-in-out backdrop-blur-md bg-white/60 p-8 shadow-xl rounded-lg animate-fade-in ${
@@ -101,7 +101,6 @@ export default function Register() {
           </button>
         </form>
 
-        {/* MENSAJE DE CONFIRMACIÓN */}
         {!formularioVisible && (
           <div className="transition-opacity duration-700 ease-in-out opacity-100 text-center backdrop-blur-md bg-white/70 mt-4 p-6 rounded-lg shadow-xl animate-fade-in">
             <h2 className="text-2xl font-semibold text-green-700 mb-2">¡Registro completado!</h2>

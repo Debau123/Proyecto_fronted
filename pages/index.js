@@ -10,6 +10,8 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import Navbar from '../components/Navbar';
 
+// 🔁 NUEVO: URL del backend en producción
+const API_URL = "https://restoratech-backend-production.up.railway.app";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -21,7 +23,7 @@ export default function Home() {
 
     async function fetchUser() {
       try {
-        const res = await fetch('http://localhost:1340/api/users/me', {
+        const res = await fetch(`${API_URL}/api/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
