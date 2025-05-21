@@ -1,8 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API_URL = "https://restoratech-backend-production.up.railway.app";
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,10 +10,13 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await axios.post(`${API_URL}/api/auth/local`, {
-        identifier: email,
-        password,
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/local`,
+        {
+          identifier: email,
+          password,
+        }
+      );
 
       const { jwt, user } = res.data;
       localStorage.setItem("token", jwt);
@@ -27,7 +28,6 @@ export default function Login() {
       else if (user.rol === "camarero") window.location.href = "/camarero";
       else if (user.rol === "cocinero") window.location.href = "/cocina";
       else if (user.rol === "administrador") window.location.href = "/admin";
-
     } catch (err) {
       setError("Credenciales incorrectas o usuario no confirmado.");
     }

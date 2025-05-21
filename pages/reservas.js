@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Navbar from '../components/Navbar';
+import { API_URL } from "@/lib/api";
 
-const API_URL = "https://restoratech-backend-production.up.railway.app";
+
+
 
 export default function Reservas() {
   const router = useRouter();

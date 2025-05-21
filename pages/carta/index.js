@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Navbar from '../../components/Navbar';
+import { API_URL } from "@/lib/api";
 
 export default function Carta() {
   const [recetas, setRecetas] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:1340/api/recetas?populate[producto][populate]=imagen,categoria&populate[receta_ingredientes][populate]=ingrediente')
+    fetch(`${API_URL}/api/recetas?populate[producto][populate]=imagen,categoria&populate[receta_ingredientes][populate]=ingrediente`)
       .then(res => res.json())
       .then(data => setRecetas(data.data || []));
   }, []);
@@ -50,7 +51,7 @@ export default function Carta() {
             >
               {imagen && (
                 <Image
-                  src={`http://localhost:1340${imagen}`}
+                  src={`${API_URL}${imagen}`}
                   alt={nombre}
                   width={400}
                   height={250}

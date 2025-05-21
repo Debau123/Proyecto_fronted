@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../../components/ui/dialog";
+import { API_URL } from "@/lib/api";
 
 export default function AdminReservas() {
   const [reservasHoy, setReservasHoy] = useState([]);
@@ -45,14 +46,14 @@ export default function AdminReservas() {
   const [reservasDelDia, setReservasDelDia] = useState([]);
 
   const fetchUsuarios = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users?pagination[limit]=100`);
+    const res = await fetch(`${API_URL}/api/users?pagination[limit]=100`);
     const data = await res.json();
     setUsuarios(data);
   };
 
   const fetchReservas = async () => {
     const hoy = new Date().toISOString().split("T")[0];
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas?populate=cliente&pagination[limit]=100`);
+    const res = await fetch(`${API_URL}/api/reservas?populate=cliente&pagination[limit]=100`);
     const data = await res.json();
     const hoyList = [];
     const futuras = [];
@@ -69,20 +70,20 @@ export default function AdminReservas() {
   };
 
   const fetchDisponibilidades = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/disponibilidades?pagination[limit]=100`);
+    const res = await fetch(`${API_URL}/api/disponibilidades?pagination[limit]=100`);
     const data = await res.json();
     setDisponibilidades(data.data);
   };
 
   const cancelarReserva = async (id) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas/${id}`, {
+    await fetch(`${API_URL}/api/reservas/${id}`, {
       method: "DELETE",
     });
     fetchReservas();
   };
 
   const eliminarDisponibilidad = async (id) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/disponibilidades/${id}`, {
+    await fetch(`${API_URL}/api/disponibilidades/${id}`, {
       method: "DELETE",
     });
     fetchDisponibilidades();
@@ -91,19 +92,19 @@ export default function AdminReservas() {
   const convertirHora = (hora) => {
     return hora.length === 5 ? `${hora}:00.000` : `${hora}.000`;
   };
-const crearReserva = async () => {
-  const { fecha, hora, comensales } = reserva;
 
-  const hoy = new Date().toISOString().split("T")[0];
-  if (fecha < hoy) {
-    setError("No se puede reservar en días pasados.");
-    return;
-  }
+  const crearReserva = async () => {
+    const { fecha, hora, comensales } = reserva;
+    const hoy = new Date().toISOString().split("T")[0];
+    if (fecha < hoy) {
+      setError("No se puede reservar en días pasados.");
+      return;
+    }
 
-  if (!fecha || !hora || !comensales || !usuarioSeleccionado) {
-    setError("Todos los campos son obligatorios, incluyendo el cliente.");
-    return;
-  }
+    if (!fecha || !hora || !comensales || !usuarioSeleccionado) {
+      setError("Todos los campos son obligatorios, incluyendo el cliente.");
+      return;
+    }
 
     const turno = getTurno(hora);
     const totalTurno = getComensalesTurno(turno);
@@ -112,7 +113,7 @@ const crearReserva = async () => {
       return;
     }
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`, {
+    await fetch(`${API_URL}/api/reservas`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -182,7 +183,7 @@ const crearReserva = async () => {
     setHorasTurno({ comida, cena });
     setAforoTurno({ comida: aforoComida, cena: aforoCena });
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas?filters[fecha][$eq]=${reserva.fecha}&populate=cliente`)
+    fetch(`${API_URL}/api/reservas?filters[fecha][$eq]=${reserva.fecha}&populate=cliente`)
       .then((res) => res.json())
       .then((data) => setReservasDelDia(data.data || []));
   }, [reserva.fecha]);

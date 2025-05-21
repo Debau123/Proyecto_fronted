@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { API_URL } from "@/lib/api";
 
 export default function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [busqueda, setBusqueda] = useState("");
-
   const [nuevoUsuario, setNuevoUsuario] = useState({ username: "", email: "", password: "" });
 
   const cargarUsuarios = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users?pagination[pageSize]=100`);
+    const res = await fetch(`${API_URL}/api/users?pagination[pageSize]=100`);
     const data = await res.json();
     setUsuarios(data);
   };
@@ -21,7 +21,7 @@ export default function AdminUsuarios() {
     const { username, email, password } = nuevoUsuario;
     if (!username || !email || !password) return;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/local/register`, {
+    await fetch(`${API_URL}/api/auth/local/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, email, password }),
@@ -32,7 +32,7 @@ export default function AdminUsuarios() {
   };
 
   const eliminarUsuario = async (id) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`, { method: "DELETE" });
+    await fetch(`${API_URL}/api/users/${id}`, { method: "DELETE" });
     await cargarUsuarios();
   };
 
@@ -63,7 +63,9 @@ export default function AdminUsuarios() {
               <h3 className="text-lg font-semibold mb-1">{u.username}</h3>
               <p className="text-sm text-gray-700">Email: {u.email}</p>
               <div className="flex justify-end mt-2">
-                <Button variant="destructive" onClick={() => eliminarUsuario(u.id)}>Eliminar</Button>
+                <Button variant="destructive" onClick={() => eliminarUsuario(u.id)}>
+                  Eliminar
+                </Button>
               </div>
             </Card>
           ))}

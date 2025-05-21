@@ -4,15 +4,21 @@ import { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { API_URL } from "@/lib/api";
 
 export default function AdminInventario() {
   const [ingredientes, setIngredientes] = useState([]);
-  const [nuevoIngrediente, setNuevoIngrediente] = useState({ nombre: "", unidad: "", stock_actual: "", stock_minimo: "" });
+  const [nuevoIngrediente, setNuevoIngrediente] = useState({
+    nombre: "",
+    unidad: "",
+    stock_actual: "",
+    stock_minimo: "",
+  });
   const [cantidadAgregar, setCantidadAgregar] = useState({});
   const [busqueda, setBusqueda] = useState("");
 
   const cargarIngredientes = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ingredientes?pagination[pageSize]=1000&sort=nombre:ASC`);
+    const res = await fetch(`${API_URL}/api/ingredientes?pagination[pageSize]=1000&sort=nombre:ASC`);
     const data = await res.json();
     setIngredientes(data.data);
   };
@@ -25,7 +31,7 @@ export default function AdminInventario() {
     const stockActual = ingrediente.attributes.stock_actual || 0;
     const nuevoStock = stockActual + cantidad;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ingredientes/${id}`, {
+    await fetch(`${API_URL}/api/ingredientes/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: { stock_actual: nuevoStock } }),
@@ -39,7 +45,7 @@ export default function AdminInventario() {
     const { nombre, unidad, stock_actual, stock_minimo } = nuevoIngrediente;
     if (!nombre || !unidad) return;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ingredientes`, {
+    await fetch(`${API_URL}/api/ingredientes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -48,8 +54,8 @@ export default function AdminInventario() {
           unidad,
           stock_actual: parseFloat(stock_actual),
           stock_minimo: parseFloat(stock_minimo),
-          publishedAt: new Date().toISOString()
-        }
+          publishedAt: new Date().toISOString(),
+        },
       }),
     });
 
@@ -83,19 +89,30 @@ export default function AdminInventario() {
             <Card
               key={ing.id}
               className={`p-4 border relative ${
-                ing.attributes.stock_actual < ing.attributes.stock_minimo ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+                ing.attributes.stock_actual < ing.attributes.stock_minimo
+                  ? "border-red-500 bg-red-50"
+                  : "border-gray-300 bg-white"
               }`}
             >
               <h3 className="text-lg font-semibold mb-1">{ing.attributes.nombre}</h3>
-              <p className="text-sm text-gray-700">Stock: {ing.attributes.stock_actual} {ing.attributes.unidad}</p>
-              <p className="text-sm text-gray-500 mb-2">Mínimo: {ing.attributes.stock_minimo} {ing.attributes.unidad}</p>
+              <p className="text-sm text-gray-700">
+                Stock: {ing.attributes.stock_actual} {ing.attributes.unidad}
+              </p>
+              <p className="text-sm text-gray-500 mb-2">
+                Mínimo: {ing.attributes.stock_minimo} {ing.attributes.unidad}
+              </p>
               <div className="flex gap-2 items-center">
                 <input
                   type="number"
                   className="border px-2 py-1 rounded"
                   placeholder={`+ cantidad (${ing.attributes.unidad})`}
                   value={cantidadAgregar[ing.id] || ""}
-                  onChange={(e) => setCantidadAgregar((prev) => ({ ...prev, [ing.id]: e.target.value }))}
+                  onChange={(e) =>
+                    setCantidadAgregar((prev) => ({
+                      ...prev,
+                      [ing.id]: e.target.value,
+                    }))
+                  }
                 />
                 <Button onClick={() => agregarStock(ing.id)}>Añadir</Button>
               </div>
@@ -105,10 +122,46 @@ export default function AdminInventario() {
 
         <div className="bg-white p-4 rounded shadow max-w-md">
           <h2 className="text-xl font-semibold mb-2">Añadir nuevo ingrediente</h2>
-          <input className="mb-2 border px-2 py-1 rounded w-full" placeholder="Nombre" value={nuevoIngrediente.nombre} onChange={(e) => setNuevoIngrediente({ ...nuevoIngrediente, nombre: e.target.value })} />
-          <input className="mb-2 border px-2 py-1 rounded w-full" placeholder="Unidad (g, ml, u)" value={nuevoIngrediente.unidad} onChange={(e) => setNuevoIngrediente({ ...nuevoIngrediente, unidad: e.target.value })} />
-          <input className="mb-2 border px-2 py-1 rounded w-full" type="number" placeholder="Stock actual" value={nuevoIngrediente.stock_actual} onChange={(e) => setNuevoIngrediente({ ...nuevoIngrediente, stock_actual: e.target.value })} />
-          <input className="mb-2 border px-2 py-1 rounded w-full" type="number" placeholder="Stock mínimo" value={nuevoIngrediente.stock_minimo} onChange={(e) => setNuevoIngrediente({ ...nuevoIngrediente, stock_minimo: e.target.value })} />
+          <input
+            className="mb-2 border px-2 py-1 rounded w-full"
+            placeholder="Nombre"
+            value={nuevoIngrediente.nombre}
+            onChange={(e) =>
+              setNuevoIngrediente({ ...nuevoIngrediente, nombre: e.target.value })
+            }
+          />
+          <input
+            className="mb-2 border px-2 py-1 rounded w-full"
+            placeholder="Unidad (g, ml, u)"
+            value={nuevoIngrediente.unidad}
+            onChange={(e) =>
+              setNuevoIngrediente({ ...nuevoIngrediente, unidad: e.target.value })
+            }
+          />
+          <input
+            className="mb-2 border px-2 py-1 rounded w-full"
+            type="number"
+            placeholder="Stock actual"
+            value={nuevoIngrediente.stock_actual}
+            onChange={(e) =>
+              setNuevoIngrediente({
+                ...nuevoIngrediente,
+                stock_actual: e.target.value,
+              })
+            }
+          />
+          <input
+            className="mb-2 border px-2 py-1 rounded w-full"
+            type="number"
+            placeholder="Stock mínimo"
+            value={nuevoIngrediente.stock_minimo}
+            onChange={(e) =>
+              setNuevoIngrediente({
+                ...nuevoIngrediente,
+                stock_minimo: e.target.value,
+              })
+            }
+          />
           <Button onClick={crearIngrediente}>Crear ingrediente</Button>
         </div>
       </div>

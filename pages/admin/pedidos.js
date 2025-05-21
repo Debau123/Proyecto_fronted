@@ -7,6 +7,8 @@ import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import moment from "moment";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { API_URL } from "@/lib/api";
+
 
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
@@ -19,7 +21,7 @@ export default function AdminPedidos() {
   const cargarPedidos = async () => {
     const inicio = moment().startOf("day").toISOString();
     const fin = moment().endOf("day").toISOString();
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pedidos?filters[fecha][$gte]=${inicio}&filters[fecha][$lte]=${fin}&populate[reserva][populate][cliente]=true&populate[pedido_productos][populate]=producto`);
+    const res = await fetch(`${API_URL}/api/pedidos?filters[fecha][$gte]=${inicio}&filters[fecha][$lte]=${fin}&populate[reserva][populate][cliente]=true&populate[pedido_productos][populate]=producto`);
     const data = await res.json();
     setPedidos(data.data);
   };
@@ -27,7 +29,7 @@ export default function AdminPedidos() {
   const cargarHistorico = async () => {
     const inicio = moment(fechaSeleccionada).startOf("day").toISOString();
     const fin = moment(fechaSeleccionada).endOf("day").toISOString();
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pedidos?filters[fecha][$gte]=${inicio}&filters[fecha][$lte]=${fin}&populate[reserva][populate][cliente]=true&populate[pedido_productos][populate]=producto`);
+    const res = await fetch(`${API_URL}/api/pedidos?filters[fecha][$gte]=${inicio}&filters[fecha][$lte]=${fin}&populate[reserva][populate][cliente]=true&populate[pedido_productos][populate]=producto`);
     const data = await res.json();
     setHistorico(data.data);
 
@@ -45,7 +47,7 @@ export default function AdminPedidos() {
   const cargarIngresosMes = async () => {
     const primerDia = moment().startOf("month").format("YYYY-MM-DD");
     const ultimoDia = moment().endOf("month").format("YYYY-MM-DD");
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pedidos?filters[fecha][$gte]=${primerDia}&filters[fecha][$lte]=${ultimoDia}&populate[pedido_productos][populate]=producto&pagination[pageSize]=100`);
+    const res = await fetch(`${API_URL}/api/pedidos?filters[fecha][$gte]=${primerDia}&filters[fecha][$lte]=${ultimoDia}&populate[pedido_productos][populate]=producto&pagination[pageSize]=100`);
     const data = await res.json();
     const total = data.data.reduce((sum, p) => {
       const productos = p.attributes.pedido_productos?.data || [];

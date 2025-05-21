@@ -1,8 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API_URL = "https://restoratech-backend-production.up.railway.app";
-
 export default function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -17,7 +15,7 @@ export default function Register() {
     setIsSubmitting(true);
 
     try {
-      await axios.post(`${API_URL}/api/auth/local/register`, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/local/register`, {
         username,
         email,
         password,
