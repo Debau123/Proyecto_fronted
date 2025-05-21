@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { API_URL } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://restoratech-backend-production.up.railway.app";
 
 export default function Navbar() {
   const [user, setUser] = useState(undefined); // undefined para diferenciar entre cargando y null
@@ -29,8 +29,9 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    setUser(null);
-    router.push('/');
+    localStorage.removeItem('user'); // por si también lo guardas
+    router.push('/'); // redirige primero
+    window.location.reload(); // recarga para limpiar estado
   };
 
   // ⚠ Mientras carga el user, no mostrar nada
