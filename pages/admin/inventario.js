@@ -14,8 +14,10 @@ import {
 } from "../../components/ui/dialog";
 import { Toaster, toast } from "react-hot-toast";
 import { API_URL } from "@/lib/api";
+import withAdminOnly from "@/lib/withAdminOnly";
 
-export default function AdminInventario() {
+
+function AdminInventario() {
   const [ingredientes, setIngredientes] = useState([]);
   const [nuevoIngrediente, setNuevoIngrediente] = useState({
     nombre: "",
@@ -212,3 +214,4 @@ export default function AdminInventario() {
     </>
   );
 }
+export default withAdminOnly(AdminInventario);

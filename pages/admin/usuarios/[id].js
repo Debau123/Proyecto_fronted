@@ -13,8 +13,10 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import withAdminOnly from "@/lib/withAdminOnly";
 
-export default function UsuarioDetalle() {
+
+function UsuarioDetalle() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -162,3 +164,4 @@ export default function UsuarioDetalle() {
     </>
   );
 }
+export default withAdminOnly(UsuarioDetalle);

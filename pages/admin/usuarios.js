@@ -17,8 +17,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Toaster, toast } from "react-hot-toast";
 import { API_URL } from "@/lib/api";
 import Link from "next/link";
+import withAdminOnly from "@/lib/withAdminOnly";
 
-export default function AdminUsuarios() {
+
+function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [modalNuevo, setModalNuevo] = useState(false);
@@ -220,3 +222,4 @@ export default function AdminUsuarios() {
     </>
   );
 }
+export default withAdminOnly(AdminUsuarios);

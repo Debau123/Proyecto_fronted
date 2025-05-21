@@ -15,8 +15,10 @@ import {
 } from "../../components/ui/dialog";
 import { API_URL } from "@/lib/api";
 import { Toaster, toast } from "react-hot-toast";
+import withAdminOnly from "@/lib/withAdminOnly";
 
-export default function AdminCarta() {
+
+function AdminCarta() {
   const [productos, setProductos] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
   const [step, setStep] = useState(1);
@@ -387,4 +389,5 @@ export default function AdminCarta() {
     </>
   );
 }
+export default withAdminOnly(AdminCarta);
 

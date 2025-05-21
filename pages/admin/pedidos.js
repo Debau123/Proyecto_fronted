@@ -8,9 +8,10 @@ import { Button } from "../../components/ui/button";
 import moment from "moment";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { API_URL } from "@/lib/api";
+import withAdminOnly from "@/lib/withAdminOnly";
 
 
-export default function AdminPedidos() {
+ function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [historico, setHistorico] = useState([]);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(moment().format("YYYY-MM-DD"));
@@ -201,3 +202,4 @@ export default function AdminPedidos() {
     </>
   );
 }
+export default withAdminOnly(AdminPedidos);

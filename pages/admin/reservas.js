@@ -17,8 +17,10 @@ import {
 } from "../../components/ui/dialog";
 import { API_URL } from "@/lib/api";
 import { Toaster, toast } from "react-hot-toast";
+import withAdminOnly from "@/lib/withAdminOnly";
 
-export default function AdminReservas() {
+
+function AdminReservas() {
   const [reservasHoy, setReservasHoy] = useState([]);
   const [reservasFuturas, setReservasFuturas] = useState([]);
   const [disponibilidades, setDisponibilidades] = useState([]);
@@ -482,3 +484,4 @@ export default function AdminReservas() {
   </>
 );
 }
+export default withAdminOnly(AdminReservas);

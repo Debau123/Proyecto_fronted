@@ -16,6 +16,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { API_URL } from "@/lib/api";
+import withAdminOnly from "@/lib/withAdminOnly"; 
 
 const getResumenAdmin = async () => {
   const hoy = new Date().toISOString().split("T")[0];
@@ -82,8 +83,7 @@ const getGraficoIngresosSemana = async () => {
 
   return ingresosPorDia;
 };
-
-export default function AdminDashboard() {
+function AdminDashboard() {
   const [resumen, setResumen] = useState({
     reservasHoy: 0,
     pedidosActivos: 0,
@@ -234,3 +234,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+export default withAdminOnly(AdminDashboard); // ✅ ENVUELTO EN EL WRAPPER
