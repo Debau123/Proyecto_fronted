@@ -16,7 +16,11 @@ export default function Home() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+
+    if (!token) {
+      setUser(null); // 🧼 Asegura que no hay usuario tras logout
+      return;
+    }
 
     async function fetchUser() {
       try {
@@ -28,6 +32,7 @@ export default function Home() {
 
         if (!res.ok) {
           localStorage.removeItem('token');
+          setUser(null);
           return;
         }
 
@@ -35,6 +40,7 @@ export default function Home() {
         setUser(userData);
       } catch (error) {
         console.error('Error comprobando usuario:', error.message);
+        setUser(null);
       }
     }
 
@@ -98,7 +104,7 @@ export default function Home() {
           </div>
         )}
       </div>
-      {/* Sección experiencia */}
+
       <Section>
         <section className="text-center py-14 px-6 bg-gray-50">
           <h2 className="text-3xl font-bold text-blue-900 mb-4">EXPERIENCIA NATURAL EN LA SIERRA DEL ESPADÁN</h2>
@@ -106,21 +112,16 @@ export default function Home() {
             Un restaurante que surge de lo más profundo de la naturaleza
           </p>
           <div className="flex justify-center mb-6">
-            <img
-              src="/sierra.jpg"
-              alt="Sierra"
-              className="rounded-lg shadow-lg w-full md:w-3/4 lg:w-2/4"
-            />
+            <img src="/sierra.jpg" alt="Sierra" className="rounded-lg shadow-lg w-full md:w-3/4 lg:w-2/4" />
           </div>
           <p className="text-gray-600 max-w-3xl mx-auto">
-            Somos un restaurante comprometido con el turismo sostenible. Ofrecemos una experiencia única en plena Sierra del Espadán, 
-            con gastronomía local elaborada con productos frescos y sin químicos. Nuestra ubicación natural y la atención especial harán 
+            Somos un restaurante comprometido con el turismo sostenible. Ofrecemos una experiencia única en plena Sierra del Espadán,
+            con gastronomía local elaborada con productos frescos y sin químicos. Nuestra ubicación natural y la atención especial harán
             de tu visita un momento inolvidable.
           </p>
         </section>
       </Section>
 
-      {/* Galería horizontal */}
       <Section>
         <section className="py-10 bg-white">
           <Swiper
@@ -135,49 +136,20 @@ export default function Home() {
             loop={true}
             className="px-4"
           >
-            {[
-              '/plato1.jpg',
-              '/plato2.jpg',
-              '/plato3.jpg',
-              '/plato4.jpg',
-              '/plato5.jpg',
-              '/plato6.jpg',
-              '/plato7.jpeg',
-              '/plato7.jpg',
-            ].map((src, i) => (
+            {['/plato1.jpg', '/plato2.jpg', '/plato3.jpg', '/plato4.jpg', '/plato5.jpg', '/plato6.jpg', '/plato7.jpeg', '/plato7.jpg'].map((src, i) => (
               <SwiperSlide key={i}>
-                <img
-                  src={src}
-                  alt={`Galería ${i + 1}`}
-                  className="rounded-lg object-cover h-64 w-full shadow-lg"
-                />
+                <img src={src} alt={`Galería ${i + 1}`} className="rounded-lg object-cover h-64 w-full shadow-lg" />
               </SwiperSlide>
             ))}
           </Swiper>
         </section>
       </Section>
 
-      {/* Funcionalidades */}
       <Section>
         <section className="bg-gray-100 py-14 px-6">
-          <h2 className="text-3xl font-bold text-center text-blue-900 mb-10">
-            ¿Qué ofrece RestoraTech?
-          </h2>
+          <h2 className="text-3xl font-bold text-center text-blue-900 mb-10">¿Qué ofrece RestoraTech?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: 'Reserva Online',
-                desc: 'Selecciona día, hora y comensales desde tu móvil.',
-              },
-              {
-                title: 'Pedidos por QR',
-                desc: 'Escanea el código en la mesa y haz tu pedido sin esperas.',
-              },
-              {
-                title: 'Cocina Sostenible',
-                desc: 'Platos con ingredientes frescos, locales y sin químicos.',
-              },
-            ].map((card, idx) => (
+            {[{ title: 'Reserva Online', desc: 'Selecciona día, hora y comensales desde tu móvil.' }, { title: 'Pedidos por QR', desc: 'Escanea el código en la mesa y haz tu pedido sin esperas.' }, { title: 'Cocina Sostenible', desc: 'Platos con ingredientes frescos, locales y sin químicos.' }].map((card, idx) => (
               <motion.div
                 key={idx}
                 variants={fadeInVariants}
@@ -194,34 +166,19 @@ export default function Home() {
         </section>
       </Section>
 
-      {/* Sellos de calidad */}
       <Section>
         <section className="py-14 bg-white text-center">
           <h2 className="text-2xl font-bold mb-10 text-blue-900">SELLOS DE CALIDAD</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 px-6 max-w-7xl mx-auto">
-
-            {[
-              '/logo1.png',
-              '/logo2.png',
-              '/logo3.png',
-              '/logo4.png',
-              '/logo5.png',
-            ].map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt={`Sello ${i + 1}`}
-                className="h-20 object-contain"
-              />
+            {["/logo1.png", "/logo2.png", "/logo3.png", "/logo4.png", "/logo5.png"].map((src, i) => (
+              <img key={i} src={src} alt={`Sello ${i + 1}`} className="h-20 object-contain" />
             ))}
           </div>
         </section>
       </Section>
 
-      {/* Footer */}
       <footer className="bg-[#1c1f26] text-white py-12 px-6 mt-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-          {/* Izquierda: contacto */}
           <div className="text-sm space-y-2">
             <p className="font-bold text-lg">Hotel Mar de Fulles</p>
             <p>Polígono 5, Parcela 69</p>
@@ -230,7 +187,6 @@ export default function Home() {
             <p>info@mardefulles.es</p>
           </div>
 
-          {/* Centro: logo y redes */}
           <div className="flex flex-col items-center gap-4">
             <img src="/logotipo.png" alt="Logo" className="h-16" />
             <div className="flex gap-4">
@@ -240,7 +196,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Derecha: frases inspiradoras */}
           <div className="text-sm italic text-gray-300 space-y-2">
             <p>"Donde la gastronomía y la naturaleza se abrazan."</p>
             <p>"Cocinar con alma, servir con conciencia."</p>
@@ -252,7 +207,6 @@ export default function Home() {
           © 2025 RestoraTech – Desarrollado con ❤️ por Iñaki Borrego
         </p>
       </footer>
-      
     </div>
   );
 }
