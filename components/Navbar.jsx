@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { API_URL } from "@/lib/api";
-
 
 export default function Navbar() {
   const [user, setUser] = useState(undefined); // undefined para diferenciar entre cargando y null
@@ -30,14 +29,14 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user'); // por si también lo guardas
-    router.push('/'); // redirige primero
-    window.location.reload(); // recarga para limpiar estado
+    router.push('/');
+    window.location.reload();
   };
 
   // ⚠ Mientras carga el user, no mostrar nada
   if (user === undefined) return null;
 
-  // ✅ NAVBAR ADMIN
+  // ✅ NAVBAR ADMINISTRADOR
   if (user?.rol === 'administrador') {
     return (
       <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur shadow">
@@ -57,7 +56,24 @@ export default function Navbar() {
     );
   }
 
-  // ✅ NAVBAR CLIENTE O NO LOGUEADO
+  // ✅ NAVBAR CAMARERO
+  if (user?.rol === 'camarero') {
+    return (
+      <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur shadow">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center text-gray-800 font-semibold">
+          <span className="text-xl font-bold">Restora<span className="text-green-600">Tech</span> Camarero</span>
+          <div className="flex gap-6 text-sm md:text-base">
+            <Link href="/camarero" className="hover:underline">Inicio</Link>
+            <Link href="/camarero/mesas" className="hover:underline">Mesas</Link>
+            <Link href="/camarero/pedidos" className="hover:underline">Pedidos</Link>
+            <button onClick={handleLogout} className="hover:underline">Logout</button>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // ✅ NAVBAR CLIENTE o NO LOGUEADO
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-black/50 backdrop-blur-md shadow-md">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center text-white font-semibold">
