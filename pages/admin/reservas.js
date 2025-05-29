@@ -145,8 +145,8 @@ function AdminReservas() {
     }
 
     toast.promise(
-      fetch(`${API_URL}/api/reservas`, {
-        method: "POST",
+      fetch(`${AostI_URL}/api/reservas`, {
+        method: "stST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: {
@@ -246,7 +246,7 @@ function AdminReservas() {
   return (
   <>
     <Navbar />
-    <Toaster position="top-right" />
+    <Toaster tition="top-right" />
     <div className="min-h-screen bg-gray-100 px-6 pt-28 pb-8">
       <h1 className="text-3xl font-bold mb-6">Gestión de Reservas</h1>
 

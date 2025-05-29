@@ -1,70 +1,74 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import { toast } from "react-hot-toast";
 import moment from "moment";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { API_URL } from "@/lib/api";
 import { motion } from "framer-motion";
 
-const INICIAL_MESAS = [
-  { id: 1, nombre: "M1", x: 60, y: 60, tipo: "cuadrada", capacidad: 2 },
-  { id: 2, nombre: "M2", x: 150, y: 60, tipo: "cuadrada", capacidad: 2 },
-  { id: 3, nombre: "M3", x: 240, y: 60, tipo: "cuadrada", capacidad: 2 },
-  { id: 4, nombre: "M4", x: 330, y: 60, tipo: "cuadrada", capacidad: 2 },
-  { id: 5, nombre: "M5", x: 60, y: 180, tipo: "cuadrada", capacidad: 4 },
-  { id: 6, nombre: "M6", x: 180, y: 180, tipo: "cuadrada", capacidad: 4 },
-  { id: 7, nombre: "M7", x: 60, y: 300, tipo: "cuadrada", capacidad: 6 },
-  { id: 8, nombre: "M8", x: 200, y: 300, tipo: "cuadrada", capacidad: 6 },
-  { id: 9, nombre: "M9", x: 340, y: 300, tipo: "cuadrada", capacidad: 6 },
-  { id: 10, nombre: "M10", x: 150, y: 420, tipo: "redonda", capacidad: 8 },
-  { id: 11, nombre: "M11", x: 300, y: 420, tipo: "redonda", capacidad: 8 },
-];
-
 export default function VistaCamarero() {
-  const [mesas, setMesas] = useState(INICIAL_MESAS.map(m => ({ ...m, ocupada: false, reserva: null, x: m.x, y: m.y })));
-  const [posiciones, setPosiciones] = useState({});
+  const [mesas, setMesas] = useState([]);
   const [reservas, setReservas] = useState([]);
+  const [incidencias, setIncidencias] = useState([]);
+  const prevMesasRef = useRef([]);
 
   useEffect(() => {
+    fetchMesas();
     fetchReservas();
   }, []);
 
+  const fetchMesas = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/mesas?populate=reserva`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const mesasData = data.data.map((m) => ({
+        id: m.id,
+        nombre: m.attributes.numero,
+        x: parseFloat(m.attributes.posicion_x) || 100,
+        y: parseFloat(m.attributes.posicion_y) || 100,
+        tipo: m.attributes.tipo || "cuadrada",
+        capacidad: m.attributes.capacidad,
+        reserva: m.attributes.reserva?.data,
+        ocupada: !!m.attributes.reserva?.data,
+      }));
+
+      // Detectar incidencias
+      const prevMesas = prevMesasRef.current;
+      const nuevasIncidencias = mesasData
+        .filter((mesa) => {
+          const prevMesa = prevMesas.find(p => p.id === mesa.id);
+          return prevMesa && prevMesa.ocupada && !mesa.ocupada;
+        })
+        .map(mesa => ({
+          id: mesa.id,
+          descripcion: `🚨 Mesa ${mesa.nombre} ha quedado libre.`,
+        }));
+
+      setMesas(mesasData);
+      setIncidencias(nuevasIncidencias);
+      prevMesasRef.current = mesasData;
+    } catch (err) {
+      console.error("Error al cargar mesas:", err);
+      toast.error("Error al cargar mesas");
+    }
+  };
+
   const fetchReservas = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`);
+      const res = await fetch(`${API_URL}/api/reservas?populate=cliente`);
       const data = await res.json();
       const hoy = moment().format("YYYY-MM-DD");
       const reservasHoy = data.data.filter(r => r.attributes.fecha === hoy);
       setReservas(reservasHoy);
     } catch (err) {
+      console.error("Error al cargar reservas:", err);
       toast.error("Error al cargar reservas");
     }
-  };
-
-  const asignarReserva = (mesaId, reserva) => {
-    setMesas((prev) =>
-      prev.map((mesa) =>
-        mesa.id === mesaId
-          ? { ...mesa, ocupada: true, reserva, capacidadAsignada: reserva.attributes.comensales }
-          : mesa
-      )
-    );
-    toast.success(`Reserva asignada a ${mesaId}`);
-  };
-
-  const quitarReserva = (mesaId) => {
-    setMesas((prev) =>
-      prev.map((mesa) =>
-        mesa.id === mesaId ? { ...mesa, ocupada: false, reserva: null, capacidadAsignada: 0 } : mesa
-      )
-    );
-    toast.success(`Reserva quitada de ${mesaId}`);
-  };
-
-  const handleDragEnd = (e, info, mesaId) => {
-    setPosiciones((prev) => ({ ...prev, [mesaId]: { x: info.point.x, y: info.point.y } }));
   };
 
   const reservasComida = reservas.filter(r =>
@@ -78,135 +82,85 @@ export default function VistaCamarero() {
     <>
       <Navbar />
       <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold">Plano del restaurante</h1>
+        <h1 className="text-2xl font-bold">📊 Dashboard Camarero</h1>
 
-        {/* 🔲 Plano con agrupación visual */}
-        <div className="relative w-full h-[700px] bg-gray-100 rounded-xl shadow-md border overflow-hidden">
-          {mesas.map((mesa) => {
-            const pos = posiciones[mesa.id] || { x: mesa.x, y: mesa.y };
+        {/* Ocupación */}
+        <div className="bg-white shadow rounded-lg p-4 text-center text-lg font-semibold">
+          Ocupación: {mesas.filter(m => m.ocupada).length}/{mesas.length} mesas ocupadas
+        </div>
 
-            // Detectar agrupación
-            const agrupadas = mesas.filter((otra) => {
-              if (otra.id === mesa.id) return false;
-              const posOtra = posiciones[otra.id] || { x: otra.x, y: otra.y };
-              const distancia = Math.sqrt(
-                Math.pow(pos.x - posOtra.x, 2) + Math.pow(pos.y - posOtra.y, 2)
-              );
-              return distancia < 80;
-            });
-
-            const grupoCompleto = [mesa, ...agrupadas];
-            const capacidadTotal = grupoCompleto.reduce((acc, m) => acc + m.capacidad, 0);
-            const nombres = grupoCompleto.map((m) => m.nombre).join(" + ");
-            const estaAgrupada = agrupadas.length > 0;
-
-            return (
+        {/* Plano centrado y adaptado */}
+        <div className="flex justify-center">
+          <div className="relative w-full max-w-4xl h-[600px] bg-gray-100 rounded-xl shadow-md border overflow-hidden">
+            {mesas.map((mesa) => (
               <motion.div
                 key={mesa.id}
-                drag
-                dragMomentum={false}
-                onDragEnd={(e, info) => handleDragEnd(e, info, mesa.id)}
-                className={`
-                  absolute flex flex-col items-center justify-center text-sm font-semibold text-white cursor-move
-                  transition-all duration-300 ease-in-out
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className={`absolute flex flex-col items-center justify-center text-sm font-semibold text-white
                   ${mesa.tipo === "redonda" ? "rounded-full" : "rounded-md"}
-                  ${mesa.ocupada ? "bg-red-600" : estaAgrupada ? "bg-blue-500" : "bg-green-600"}
-                  shadow-lg
-                `}
+                  ${mesa.ocupada ? "bg-red-600" : "bg-green-600"} shadow-lg`}
                 style={{
-                  left: pos.x,
-                  top: pos.y,
-                  width: estaAgrupada ? "7rem" : "6rem",
-                  height: estaAgrupada ? "7rem" : "6rem",
-                  zIndex: estaAgrupada ? 10 : 1,
-                  border: estaAgrupada ? "3px dashed #fff" : "none",
-                  position: "absolute",
+                  left: mesa.x,
+                  top: mesa.y,
+                  width: "6rem",
+                  height: "6rem",
                 }}
               >
-                <span className="text-center leading-tight text-xs px-1">{nombres}</span>
-                <span className="text-center">{capacidadTotal} pax</span>
+                <span>Mesa {mesa.nombre}</span>
+                <span>{mesa.capacidad} pax</span>
                 {mesa.ocupada && (
-                  <button
-                    onClick={() => quitarReserva(mesa.id)}
-                    className="text-xs underline mt-1"
-                  >
-                    Quitar
-                  </button>
+                  <>
+                    <span className="text-xs">{mesa.reserva?.attributes?.hora}</span>
+                    <span className="text-xs">{mesa.reserva?.attributes?.cliente?.data?.attributes?.username}</span>
+                  </>
                 )}
               </motion.div>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-4 text-center text-lg font-semibold">
-          Total reservas hoy: {reservas.length}
-        </div>
-
-        {/* Reservas por turno */}
+        {/* Reservas */}
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-xl font-semibold mb-2">🕛 Turno Comida</h2>
             {reservasComida.length === 0 && <p className="text-gray-500">Sin reservas.</p>}
             {reservasComida.map((reserva) => (
               <Card key={reserva.id} className="p-4 mb-2">
-                <p><strong>{reserva.attributes.nombre_cliente}</strong> - {reserva.attributes.hora}</p>
+                <p><strong>{reserva.attributes.cliente?.data?.attributes?.username || "Cliente"}</strong> - {reserva.attributes.hora}</p>
                 <p>{reserva.attributes.comensales} comensales</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {mesas
-                    .filter((m) => !m.ocupada)
-                    .map((mesa) => {
-                      const pos = posiciones[mesa.id] || { x: mesa.x, y: mesa.y };
-                      const agrupadas = mesas.filter((otra) => {
-                        if (otra.id === mesa.id) return false;
-                        const posOtra = posiciones[otra.id] || { x: otra.x, y: otra.y };
-                        const distancia = Math.sqrt(
-                          Math.pow(pos.x - posOtra.x, 2) + Math.pow(pos.y - posOtra.y, 2)
-                        );
-                        return distancia < 80;
-                      });
-                      const total = [mesa, ...agrupadas].reduce((sum, m) => sum + m.capacidad, 0);
-                      return total >= reserva.attributes.comensales ? (
-                        <Button key={mesa.id} onClick={() => asignarReserva(mesa.id, reserva)} className="text-xs">
-                          Asignar a {mesa.nombre}
-                        </Button>
-                      ) : null;
-                    })}
-                </div>
               </Card>
             ))}
           </div>
-
           <div>
             <h2 className="text-xl font-semibold mb-2">🌙 Turno Cena</h2>
             {reservasCena.length === 0 && <p className="text-gray-500">Sin reservas.</p>}
             {reservasCena.map((reserva) => (
               <Card key={reserva.id} className="p-4 mb-2">
-                <p><strong>{reserva.attributes.nombre_cliente}</strong> - {reserva.attributes.hora}</p>
+                <p><strong>{reserva.attributes.cliente?.data?.attributes?.username || "Cliente"}</strong> - {reserva.attributes.hora}</p>
                 <p>{reserva.attributes.comensales} comensales</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {mesas
-                    .filter((m) => !m.ocupada)
-                    .map((mesa) => {
-                      const pos = posiciones[mesa.id] || { x: mesa.x, y: mesa.y };
-                      const agrupadas = mesas.filter((otra) => {
-                        if (otra.id === mesa.id) return false;
-                        const posOtra = posiciones[otra.id] || { x: otra.x, y: otra.y };
-                        const distancia = Math.sqrt(
-                          Math.pow(pos.x - posOtra.x, 2) + Math.pow(pos.y - posOtra.y, 2)
-                        );
-                        return distancia < 80;
-                      });
-                      const total = [mesa, ...agrupadas].reduce((sum, m) => sum + m.capacidad, 0);
-                      return total >= reserva.attributes.comensales ? (
-                        <Button key={mesa.id} onClick={() => asignarReserva(mesa.id, reserva)} className="text-xs">
-                          Asignar a {mesa.nombre}
-                        </Button>
-                      ) : null;
-                    })}
-                </div>
               </Card>
             ))}
           </div>
+        </div>
+
+        {/* Incidencias reales */}
+        <div>
+          <h2 className="text-xl font-semibold mb-2">🚨 Incidencias del día</h2>
+          {incidencias.length === 0 ? (
+            <p className="text-gray-500">No hay incidencias.</p>
+          ) : (
+            incidencias.map((inc) => (
+              <Card key={inc.id} className="p-3 mb-2 bg-yellow-100">
+                {inc.descripcion}
+              </Card>
+            ))
+          )}
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-4 text-center text-lg font-semibold">
+          Total reservas hoy: {reservas.length}
         </div>
       </div>
     </>
