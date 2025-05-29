@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar"; // Navbar del camarero
+import Navbar from "@/components/Navbar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import moment from "moment";
 import { API_URL } from "@/lib/api";
 import ModalCrearPedido from "@/components/ModalCrearPedido";
 import { Button } from "@/components/ui/button";
+import withCamareroOnly from "@/lib/withCamareroOnly"; // 🔒 Importa el HOC
 
 function CamareroPedidos() {
   const [pedidos, setPedidos] = useState([]);
@@ -142,4 +143,4 @@ function CamareroPedidos() {
   );
 }
 
-export default CamareroPedidos;
+export default withCamareroOnly(CamareroPedidos); // 🔒 Protegemos la vista

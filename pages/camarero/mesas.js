@@ -1,10 +1,13 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import PlanoMesasCamarero from "@/components/camarero/PlanoMesasCamarero";
 import { API_URL } from "@/lib/api";
-import { toast } from "react-hot-toast"; // 🚩 Importa toast
+import { toast } from "react-hot-toast";
+import withCamareroOnly from "@/lib/withCamareroOnly"; // 🔒 Importa el HOC
 
-export default function CamareroMesas() {
+function CamareroMesas() {
   const [reservas, setReservas] = useState([]);
   const [mesas, setMesas] = useState([]);
   const [turnoActual, setTurnoActual] = useState("mañana");
@@ -62,7 +65,7 @@ export default function CamareroMesas() {
         },
         body: JSON.stringify({ data: { reserva: reservaId, reservada: true } }),
       });
-      await fetchMesas(); // Recarga mesas
+      await fetchMesas();
       toast.success("Mesa asignada correctamente");
     } catch (err) {
       console.error("Error al asignar mesa:", err);
@@ -81,7 +84,7 @@ export default function CamareroMesas() {
         },
         body: JSON.stringify({ data: { reserva: null, reservada: false } }),
       });
-      await fetchMesas(); // Recarga mesas
+      await fetchMesas();
       toast.success("Mesa desasignada correctamente");
     } catch (err) {
       console.error("Error al desasignar mesa:", err);
@@ -166,3 +169,5 @@ export default function CamareroMesas() {
     </div>
   );
 }
+
+export default withCamareroOnly(CamareroMesas); // 🔒 Protegemos la vista

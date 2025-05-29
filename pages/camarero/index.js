@@ -7,8 +7,9 @@ import moment from "moment";
 import { Card } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
 import { motion } from "framer-motion";
+import withCamareroOnly from "@/lib/withCamareroOnly"; // Importa el HOC
 
-export default function VistaCamarero() {
+function VistaCamarero() {
   const [mesas, setMesas] = useState([]);
   const [reservas, setReservas] = useState([]);
   const [incidencias, setIncidencias] = useState([]);
@@ -37,7 +38,6 @@ export default function VistaCamarero() {
         ocupada: !!m.attributes.reserva?.data,
       }));
 
-      // Detectar incidencias
       const prevMesas = prevMesasRef.current;
       const nuevasIncidencias = mesasData
         .filter((mesa) => {
@@ -84,12 +84,10 @@ export default function VistaCamarero() {
       <div className="p-6 space-y-6">
         <h1 className="text-2xl font-bold">📊 Dashboard Camarero</h1>
 
-        {/* Ocupación */}
         <div className="bg-white shadow rounded-lg p-4 text-center text-lg font-semibold">
           Ocupación: {mesas.filter(m => m.ocupada).length}/{mesas.length} mesas ocupadas
         </div>
 
-        {/* Plano centrado y adaptado */}
         <div className="flex justify-center">
           <div className="relative w-full max-w-4xl h-[600px] bg-gray-100 rounded-xl shadow-md border overflow-hidden">
             {mesas.map((mesa) => (
@@ -121,7 +119,6 @@ export default function VistaCamarero() {
           </div>
         </div>
 
-        {/* Reservas */}
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-xl font-semibold mb-2">🕛 Turno Comida</h2>
@@ -145,7 +142,6 @@ export default function VistaCamarero() {
           </div>
         </div>
 
-        {/* Incidencias reales */}
         <div>
           <h2 className="text-xl font-semibold mb-2">🚨 Incidencias del día</h2>
           {incidencias.length === 0 ? (
@@ -166,3 +162,5 @@ export default function VistaCamarero() {
     </>
   );
 }
+
+export default withCamareroOnly(VistaCamarero); // Protegemos la vista
