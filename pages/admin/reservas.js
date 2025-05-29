@@ -145,8 +145,8 @@ function AdminReservas() {
     }
 
     toast.promise(
-      fetch(`${AostI_URL}/api/reservas`, {
-        method: "stST",
+      fetch(`${API_URL}/api/reservas`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: {
