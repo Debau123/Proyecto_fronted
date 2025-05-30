@@ -32,7 +32,7 @@ export default function Login() {
 
       if (user.rol === "cliente") window.location.href = "/";
       else if (user.rol === "camarero") window.location.href = "/camarero";
-      else if (user.rol === "cocinero") window.location.href = "/cocina";
+      else if (user.rol === "cocinero") window.location.href = "/cocinero";
       else if (user.rol === "administrador") window.location.href = "/admin";
     } catch (err) {
       setError("Credenciales incorrectas o usuario no confirmado.");

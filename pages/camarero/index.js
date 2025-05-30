@@ -163,4 +163,4 @@ function VistaCamarero() {
   );
 }
 
-export default withCamareroOnly(VistaCamarero); // Protegemos la vista
+export default withCamareroOnly(VistaCamarero); //  Protegemos la vista con el HOC

@@ -6,6 +6,7 @@ import PlanoMesasCamarero from "@/components/camarero/PlanoMesasCamarero";
 import { API_URL } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import withCamareroOnly from "@/lib/withCamareroOnly"; // 🔒 Importa el HOC
+import moment from "moment";
 
 function CamareroMesas() {
   const [reservas, setReservas] = useState([]);
@@ -42,8 +43,13 @@ function CamareroMesas() {
     fetchMesas();
   }, []);
 
-  const hoy = new Date().toISOString().split("T")[0];
-  const reservasHoy = reservas.filter((r) => r.attributes.fecha === hoy);
+  // Ajuste: comparación de fecha ignorando hora
+  const hoy = moment().format("YYYY-MM-DD");
+  const reservasHoy = reservas.filter((r) => {
+    const fechaReserva = moment(r.attributes.fecha).format("YYYY-MM-DD");
+    return fechaReserva === hoy;
+  });
+
   const reservasTurno =
     turnoActual === "mañana"
       ? reservasHoy.filter((r) => r.attributes.hora < "17:00")
@@ -132,7 +138,7 @@ function CamareroMesas() {
                     <strong>{r.attributes.cliente?.data?.attributes?.username || "Sin cliente"}</strong> -{" "}
                     {r.attributes.hora} - {r.attributes.comensales} pax
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {mesaAsignada ? (
                       <button
                         onClick={() => handleDesasignarMesa(mesaAsignada.id)}
@@ -143,13 +149,14 @@ function CamareroMesas() {
                     ) : (
                       mesas
                         .filter((m) => !m.attributes.reservada)
+                        .sort((a, b) => a.attributes.numero - b.attributes.numero) // 🧹 Orden por número
                         .map((mesa) => (
                           <button
                             key={mesa.id}
                             onClick={() => handleAsignarMesa(r.id, mesa.id)}
                             className="px-2 py-1 bg-blue-500 text-white rounded"
                           >
-                            Asignar Mesa {mesa.attributes.numero}
+                            Asignar Mesa {mesa.attributes.numero} ({mesa.attributes.tipo}, {mesa.attributes.capacidad} pax)
                           </button>
                         ))
                     )}
@@ -170,4 +177,4 @@ function CamareroMesas() {
   );
 }
 
-export default withCamareroOnly(CamareroMesas); // 🔒 Protegemos la vista
+export default withCamareroOnly(CamareroMesas); // Protegemos la vista

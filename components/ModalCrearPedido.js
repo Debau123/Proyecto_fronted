@@ -9,9 +9,9 @@ import { API_URL } from "@/lib/api";
 import { toast } from "react-hot-toast";
 
 export default function ModalCrearPedido({ open, onClose }) {
-  const [mesasConReserva, setMesasConReserva] = useState([]);
+  const [reservasConfirmadas, setReservasConfirmadas] = useState([]); // Solo reservas con mesa asignada
   const [productos, setProductos] = useState([]);
-  const [mesaSeleccionada, setMesaSeleccionada] = useState(null);
+  const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [cantidadSeleccionada, setCantidadSeleccionada] = useState(1);
   const [productosPedido, setProductosPedido] = useState([]);
@@ -19,22 +19,35 @@ export default function ModalCrearPedido({ open, onClose }) {
 
   useEffect(() => {
     if (open) {
-      cargarMesasConReserva();
+      cargarReservasConfirmadas();
       cargarProductos();
     }
   }, [open]);
 
-  const cargarMesasConReserva = async () => {
-    const res = await fetch(`${API_URL}/api/mesas?populate[reserva][populate]=cliente`);
-    const data = await res.json();
-    const mesas = data.data.filter(m => m.attributes.reserva?.data !== null);
-    setMesasConReserva(mesas);
+  const cargarReservasConfirmadas = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/reservas?filters[mesa][id][$notNull]=true&populate=mesa,cliente`);
+      const data = await res.json();
+      if (data && data.data) {
+        setReservasConfirmadas(data.data);
+      } else {
+        setReservasConfirmadas([]);
+      }
+    } catch (err) {
+      console.error("Error cargando reservas confirmadas:", err);
+      setReservasConfirmadas([]);
+    }
   };
 
   const cargarProductos = async () => {
-    const res = await fetch(`${API_URL}/api/productos`);
-    const data = await res.json();
-    setProductos(data.data);
+    try {
+      const res = await fetch(`${API_URL}/api/productos`);
+      const data = await res.json();
+      setProductos(data.data || []);
+    } catch (err) {
+      console.error("Error cargando productos:", err);
+      setProductos([]);
+    }
   };
 
   const agregarProducto = () => {
@@ -56,14 +69,13 @@ export default function ModalCrearPedido({ open, onClose }) {
   };
 
   const confirmarPedido = async () => {
-    if (!mesaSeleccionada || productosPedido.length === 0) {
-      toast.error("Selecciona mesa y productos");
+    if (!reservaSeleccionada || productosPedido.length === 0) {
+      toast.error("Selecciona reserva y productos");
       return;
     }
 
     setLoading(true);
     const token = localStorage.getItem("token");
-    const reservaId = mesaSeleccionada.attributes.reserva.data.id;
 
     try {
       toast.loading("Creando pedido...");
@@ -72,9 +84,9 @@ export default function ModalCrearPedido({ open, onClose }) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           data: {
-            reserva: reservaId,
+            reserva: reservaSeleccionada.id,
             estado: "pendiente",
-            fecha: new Date().toISOString()
+            fecha: new Date().toISOString(),
           }
         }),
       });
@@ -89,8 +101,8 @@ export default function ModalCrearPedido({ open, onClose }) {
             data: {
               pedido: pedidoId,
               producto: item.productoId,
-              cantidad: item.cantidad
-            }
+              cantidad: item.cantidad,
+            },
           }),
         });
 
@@ -136,21 +148,23 @@ export default function ModalCrearPedido({ open, onClose }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Mesa */}
-          <Select onValueChange={id => setMesaSeleccionada(mesasConReserva.find(m => m.id == id))}>
+          <Select onValueChange={id => setReservaSeleccionada(reservasConfirmadas.find(r => r.id == id))}>
             <SelectTrigger disabled={loading}>
-              <SelectValue placeholder="Selecciona mesa" />
+              <SelectValue placeholder="Selecciona reserva" />
             </SelectTrigger>
             <SelectContent>
-              {mesasConReserva.map(m => (
-                <SelectItem key={m.id} value={m.id}>
-                  Mesa {m.attributes.numero} - {m.attributes.reserva.data.attributes.cliente.data.attributes.username}
-                </SelectItem>
-              ))}
+              {Array.isArray(reservasConfirmadas) && reservasConfirmadas.length > 0 ? (
+                reservasConfirmadas.map(r => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.attributes.cliente?.data?.attributes?.username || "Cliente"} - Mesa {r.attributes.mesa?.data?.attributes?.numero || "N/A"}
+                  </SelectItem>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 p-2">No hay reservas con mesa asignada</p>
+              )}
             </SelectContent>
           </Select>
 
-          {/* Producto */}
           <Select onValueChange={id => setProductoSeleccionado(id)} disabled={loading}>
             <SelectTrigger>
               <SelectValue placeholder="Selecciona producto" />
@@ -174,7 +188,6 @@ export default function ModalCrearPedido({ open, onClose }) {
           />
           <Button onClick={agregarProducto} disabled={!productoSeleccionado || loading}>Agregar al pedido</Button>
 
-          {/* Lista de productos añadidos */}
           {productosPedido.length > 0 && (
             <div>
               <h3>Productos añadidos:</h3>
@@ -193,8 +206,12 @@ export default function ModalCrearPedido({ open, onClose }) {
         </div>
 
         <DialogFooter>
-          <Button onClick={confirmarPedido} disabled={loading}>{loading ? "Creando pedido..." : "Confirmar"}</Button>
-          <Button variant="outline" onClick={onClose} disabled={loading}>Cancelar</Button>
+          <Button onClick={confirmarPedido} disabled={loading}>
+            {loading ? "Creando pedido..." : "Confirmar"}
+          </Button>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -73,6 +73,22 @@ export default function Navbar() {
     );
   }
 
+  // ✅ NAVBAR COCINERO
+  if (user?.rol === 'cocinero') {
+    return (
+      <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur shadow">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center text-gray-800 font-semibold">
+          <span className="text-xl font-bold">Restora<span className="text-green-600">Tech</span> Cocina</span>
+          <div className="flex gap-6 text-sm md:text-base">
+            <Link href="/cocinero" className="hover:underline">Pedidos</Link>
+            <Link href="/cocinero/inventario" className="hover:underline">Inventario</Link>
+            <button onClick={handleLogout} className="hover:underline">Logout</button>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   // ✅ NAVBAR CLIENTE o NO LOGUEADO
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-black/50 backdrop-blur-md shadow-md">
