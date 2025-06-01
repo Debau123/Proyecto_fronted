@@ -15,7 +15,7 @@ function CamareroMesas() {
 
   const fetchReservas = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/reservas?populate=cliente`);
+      const res = await fetch(`${API_URL}/api/reservas?populate=user`);
       const data = await res.json();
       setReservas(data.data || []);
     } catch (err) {
@@ -135,7 +135,7 @@ function CamareroMesas() {
                   className="border p-4 rounded shadow mb-4 flex justify-between items-center"
                 >
                   <span>
-                    <strong>{r.attributes.cliente?.data?.attributes?.username || "Sin cliente"}</strong> -{" "}
+                    <strong>{r.attributes.user?.data?.attributes?.username || "Sin cliente"}</strong> -{" "}
                     {r.attributes.hora} - {r.attributes.comensales} pax
                   </span>
                   <div className="flex gap-2 flex-wrap">

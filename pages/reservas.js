@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,14 +8,11 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Navbar from '../components/Navbar';
 import { API_URL } from "@/lib/api";
 
-
-
-
 export default function Reservas() {
   const router = useRouter();
 
   const [disponibilidades, setDisponibilidades] = useState([]);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState('');
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [horasGeneradas, setHorasGeneradas] = useState({ comida: [], cena: [] });
   const [aforoMaximo, setAforoMaximo] = useState({ comida: 0, cena: 0 });
   const [reservasDelDia, setReservasDelDia] = useState([]);
@@ -50,23 +48,20 @@ export default function Reservas() {
   }, []);
 
   useEffect(() => {
-    if (!fechaSeleccionada || disponibilidades.length === 0) return;
+    if (!fechaSeleccionada || disponibilidades.length === 0) {
+      setHorasGeneradas({ comida: [], cena: [] });
+      setAforoMaximo({ comida: 0, cena: 0 });
+      return;
+    }
 
-    const disponibles = disponibilidades.filter(
-      d => d.attributes.fecha === fechaSeleccionada
-    );
-
+    const disponibles = disponibilidades.filter(d => d.attributes.fecha === fechaSeleccionada);
     if (disponibles.length === 0) {
       setHorasGeneradas({ comida: [], cena: [] });
       setAforoMaximo({ comida: 0, cena: 0 });
       return;
     }
 
-    let comida = [];
-    let cena = [];
-    let aforoComida = 0;
-    let aforoCena = 0;
-
+    let comida = [], cena = [], aforoComida = 0, aforoCena = 0;
     disponibles.forEach(d => {
       const [hInicio, mInicio] = d.attributes.hora_inicio.split(':').map(Number);
       const [hFin, mFin] = d.attributes.hora_fin.split(':').map(Number);
@@ -76,15 +71,11 @@ export default function Reservas() {
 
       let current = new Date(`${fechaSeleccionada}T${String(hInicio).padStart(2, '0')}:${String(mInicio).padStart(2, '0')}`);
       const end = new Date(`${fechaSeleccionada}T${String(hFin).padStart(2, '0')}:${String(mFin).padStart(2, '0')}`);
-
       while (current < end) {
         const hora = current.getHours();
         const formatted = `${String(hora).padStart(2, '0')}:${String(current.getMinutes()).padStart(2, '0')}`;
-        if (hora < 17) {
-          if (!comida.includes(formatted)) comida.push(formatted);
-        } else {
-          if (!cena.includes(formatted)) cena.push(formatted);
-        }
+        if (hora < 17) comida.push(formatted);
+        else cena.push(formatted);
         current.setMinutes(current.getMinutes() + 5);
       }
     });
@@ -92,14 +83,14 @@ export default function Reservas() {
     setHorasGeneradas({ comida, cena });
     setAforoMaximo({ comida: aforoComida, cena: aforoCena });
 
-    fetch(`${API_URL}/api/reservas?filters[fecha][$eq]=${fechaSeleccionada}&populate=cliente`)
+    fetch(`${API_URL}/api/reservas?filters[fecha][$eq]=${fechaSeleccionada}&populate=user`)
       .then(res => res.json())
       .then(data => setReservasDelDia(data.data || []));
   }, [fechaSeleccionada, disponibilidades]);
 
   useEffect(() => {
     if (!userId) return;
-    fetch(`${API_URL}/api/reservas?filters[cliente][id][$eq]=${userId}&sort=fecha:desc&sort=hora:desc&populate=cliente`)
+    fetch(`${API_URL}/api/reservas?filters[user][id][$eq]=${userId}&sort=fecha:desc&sort=hora:desc&populate=user`)
       .then(res => res.json())
       .then(data => {
         const todas = data.data || [];
@@ -108,17 +99,18 @@ export default function Reservas() {
       });
   }, [userId, mensaje]);
 
-  const formatearFecha = (date) => {
+  const formatearFecha = date => {
+    if (!date) return '';
     const year = date.getFullYear();
     const month = `${date.getMonth() + 1}`.padStart(2, '0');
     const day = `${date.getDate()}`.padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
 
-  const formatearHora = (hora) => hora.split(':').slice(0, 2).join(':');
-  const getTurno = (hora) => (hora < '17:00' ? 'comida' : 'cena');
+  const formatearHora = hora => hora.split(':').slice(0, 2).join(':');
+  const getTurno = hora => (hora < '17:00' ? 'comida' : 'cena');
 
-  const getComensalesTurno = (turno) =>
+  const getComensalesTurno = turno =>
     reservasDelDia
       .filter(r => getTurno(formatearHora(r.attributes.hora)) === turno)
       .reduce((sum, r) => sum + r.attributes.comensales, 0);
@@ -128,25 +120,23 @@ export default function Reservas() {
 
     const turno = getTurno(horaSeleccionada);
     const totalTurno = getComensalesTurno(turno);
-
     if (totalTurno + comensales > aforoMaximo[turno]) {
       setMensaje(`No puedes reservar, se supera el aforo del turno ${turno}.`);
       return;
     }
 
     const token = localStorage.getItem('token');
+    if (!token) return;
+
     const res = await fetch(`${API_URL}/api/reservas`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         data: {
           fecha: fechaSeleccionada,
           hora: `${horaSeleccionada}:00.000`,
           comensales,
-          cliente: userId,
+          user: userId,  // Cambiado a 'user'
         },
       }),
     });
@@ -159,7 +149,7 @@ export default function Reservas() {
     }
   };
 
-  const handleEliminar = async (id) => {
+  const handleEliminar = async id => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -174,7 +164,6 @@ export default function Reservas() {
       setProximas(prev => prev.filter(r => r.id !== id));
     }
   };
-
   return (
     <div className="bg-cover bg-center min-h-screen" style={{ backgroundImage: 'url(/restaurant.jpg)' }}>
       <Navbar />
@@ -188,8 +177,13 @@ export default function Reservas() {
               <DatePicker
                 selected={fechaSeleccionada ? new Date(fechaSeleccionada) : null}
                 onChange={(date) => {
-                  const strFecha = formatearFecha(date);
-                  setFechaSeleccionada(strFecha);
+                  if (date) {
+                    const strFecha = formatearFecha(date);
+                    console.log('Fecha seleccionada en onChange:', strFecha);
+                    setFechaSeleccionada(strFecha);
+                  } else {
+                    setFechaSeleccionada(null);
+                  }
                   setHoraSeleccionada(null);
                   setMensaje(null);
                   setComensales(1);
@@ -201,6 +195,10 @@ export default function Reservas() {
               />
             </div>
           </div>
+
+          {fechaSeleccionada && horasGeneradas.comida.length === 0 && horasGeneradas.cena.length === 0 && (
+            <p className="text-center text-red-600">No hay disponibilidad para esta fecha.</p>
+          )}
 
           {['comida', 'cena'].map((turno) => (
             horasGeneradas[turno].length > 0 && (

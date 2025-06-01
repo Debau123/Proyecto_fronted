@@ -64,7 +64,7 @@ function AdminReservas() {
     try {
       setIsLoadingReservas(true);
       const hoy = new Date().toISOString().split("T")[0];
-      const res = await fetch(`${API_URL}/api/reservas?populate=cliente&pagination[limit]=100`);
+      const res = await fetch(`${API_URL}/api/reservas?populate=user&pagination[limit]=100`);
       const data = await res.json();
       const hoyList = [];
       const futuras = [];
@@ -153,7 +153,7 @@ function AdminReservas() {
             fecha,
             hora: convertirHora(hora),
             comensales: parseInt(comensales),
-            cliente: parseInt(usuarioSeleccionado),
+            user: parseInt(usuarioSeleccionado),
             publishedAt: new Date().toISOString(),
           },
         }),
@@ -221,7 +221,7 @@ function AdminReservas() {
     setHorasTurno({ comida, cena });
     setAforoTurno({ comida: aforoComida, cena: aforoCena });
 
-    fetch(`${API_URL}/api/reservas?filters[fecha][$eq]=${reserva.fecha}&populate=cliente`)
+    fetch(`${API_URL}/api/reservas?filters[fecha][$eq]=${reserva.fecha}&populate=user`)
       .then((res) => res.json())
       .then((data) => setReservasDelDia(data.data || []));
   }, [reserva.fecha]);
@@ -347,7 +347,7 @@ function AdminReservas() {
               {reservasHoy.map((r) => (
                 <Card key={r.id} className="p-4 mb-2 flex justify-between items-center">
                   <div>
-                    <p><strong>Cliente:</strong> {r.attributes.cliente?.data?.attributes?.username || "Sin cliente"}</p>
+                    <p><strong>Cliente:</strong> {r.attributes.user?.data?.attributes?.username || "Sin cliente"}</p>
                     <p><strong>Hora:</strong> {r.attributes.hora}</p>
                   </div>
                   <Button variant="destructive" onClick={() => cancelarReserva(r.id)}>
@@ -360,7 +360,8 @@ function AdminReservas() {
               {reservasFuturas.map((r) => (
                 <Card key={r.id} className="p-4 mb-2 flex justify-between items-center">
                   <div>
-                    <p><strong>Cliente:</strong> {r.attributes.cliente?.data?.attributes?.username || "Sin cliente"}</p>
+                    <p><strong>Cliente:</strong> {r.attributes.user?.data?.attributes?.username || "Sin cliente"}</p>
+
                     <p><strong>Fecha:</strong> {r.attributes.fecha}</p>
                     <p><strong>Hora:</strong> {r.attributes.hora}</p>
                   </div>

@@ -60,7 +60,7 @@ function VistaCamarero() {
 
   const fetchReservas = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/reservas?populate=cliente`);
+      const res = await fetch(`${API_URL}/api/reservas?populate=user`);
       const data = await res.json();
       const hoy = moment().format("YYYY-MM-DD");
       const reservasHoy = data.data.filter(r => r.attributes.fecha === hoy);
@@ -111,7 +111,7 @@ function VistaCamarero() {
                 {mesa.ocupada && (
                   <>
                     <span className="text-xs">{mesa.reserva?.attributes?.hora}</span>
-                    <span className="text-xs">{mesa.reserva?.attributes?.cliente?.data?.attributes?.username}</span>
+                    <span className="text-xs">{mesa.reserva?.attributes?.user?.data?.attributes?.username}</span>
                   </>
                 )}
               </motion.div>
@@ -125,7 +125,7 @@ function VistaCamarero() {
             {reservasComida.length === 0 && <p className="text-gray-500">Sin reservas.</p>}
             {reservasComida.map((reserva) => (
               <Card key={reserva.id} className="p-4 mb-2">
-                <p><strong>{reserva.attributes.cliente?.data?.attributes?.username || "Cliente"}</strong> - {reserva.attributes.hora}</p>
+                <p><strong>{reserva.attributes.user?.data?.attributes?.username || "Cliente"}</strong> - {reserva.attributes.hora}</p>
                 <p>{reserva.attributes.comensales} comensales</p>
               </Card>
             ))}
@@ -135,7 +135,7 @@ function VistaCamarero() {
             {reservasCena.length === 0 && <p className="text-gray-500">Sin reservas.</p>}
             {reservasCena.map((reserva) => (
               <Card key={reserva.id} className="p-4 mb-2">
-                <p><strong>{reserva.attributes.cliente?.data?.attributes?.username || "Cliente"}</strong> - {reserva.attributes.hora}</p>
+                <p><strong>{reserva.attributes.user?.data?.attributes?.username || "Cliente"}</strong> - {reserva.attributes.hora}</p>
                 <p>{reserva.attributes.comensales} comensales</p>
               </Card>
             ))}
