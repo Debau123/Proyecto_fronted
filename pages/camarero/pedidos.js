@@ -9,42 +9,150 @@ import moment from "moment";
 import ModalCrearPedido from "@/components/ModalCrearPedido";
 import withCamareroOnly from "@/lib/withCamareroOnly";
 
-const socket = io(API_URL); // Conexión al backend
+const socket = io(API_URL);
 
 function CamareroPedidos() {
   const [pedidos, setPedidos] = useState([]);
-  const [historico, setHistorico] = useState([]);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState(moment().format("YYYY-MM-DD"));
   const [openModal, setOpenModal] = useState(false);
+  const [fechaHistorico, setFechaHistorico] = useState(moment().subtract(1, "day").format("YYYY-MM-DD"));
 
   const cargarPedidos = async () => {
-    const inicio = moment().startOf("day").toISOString();
-    const fin = moment().endOf("day").toISOString();
-    const res = await fetch(`${API_URL}/api/pedidos?filters[fecha][$gte]=${inicio}&filters[fecha][$lte]=${fin}&populate=pedido_productos.producto,reserva.cliente`);
+    const res = await fetch(`${API_URL}/api/pedidos?populate=pedido_productos.producto,reserva.user`);
     const data = await res.json();
     setPedidos(data.data);
   };
 
   useEffect(() => {
     cargarPedidos();
-
     socket.on("pedido_actualizado", (data) => {
       console.log("Pedido actualizado:", data);
-      cargarPedidos(); // Recarga pedidos automáticamente
+      cargarPedidos();
     });
-
-    return () => {
-      socket.off("pedido_actualizado");
-    };
+    return () => socket.off("pedido_actualizado");
   }, []);
 
-  const cambiarDia = (dias) => {
-    const nuevaFecha = moment(fechaSeleccionada).add(dias, "days");
-    if (nuevaFecha.isAfter(moment(), "day")) return;
-    setFechaSeleccionada(nuevaFecha.format("YYYY-MM-DD"));
+  const avanzarEstado = async (pedido) => {
+    const secuencia = ["pendiente", "en_proceso", "preparado", "completo"];
+    const actual = pedido.attributes.estado;
+    const siguiente = secuencia[secuencia.indexOf(actual) + 1] || actual;
+    await fetch(`${API_URL}/api/pedidos/${pedido.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { estado: siguiente } }),
+    });
+    socket.emit("pedido_actualizado", { id: pedido.id, estado: siguiente });
+    cargarPedidos();
   };
 
-  const estados = ["pendiente", "en_proceso", "completo"];
+  const cancelarPedido = async (pedido) => {
+    await fetch(`${API_URL}/api/pedidos/${pedido.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { estado: "cancelado" } }),
+    });
+    socket.emit("pedido_actualizado", { id: pedido.id, estado: "cancelado" });
+    cargarPedidos();
+  };
+
+  const estados = ["pendiente", "en_proceso", "preparado", "completo", "cancelado"];
+
+  const pedidosHoy = pedidos.filter((p) => moment(p.attributes.fecha).isSame(moment(), "day"));
+  const pedidosHistoricos = pedidos.filter((p) => moment(p.attributes.fecha).isSame(fechaHistorico, "day"));
+  const pedidosManana = pedidosHoy.filter((p) => moment(p.attributes.fecha).hour() < 17);
+  const pedidosNoche = pedidosHoy.filter((p) => moment(p.attributes.fecha).hour() >= 17);
+  const esDespuesDe17 = moment().hour() >= 17;
+
+  const renderFlujo = (lista, turno) => (
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold mb-4">{turno}</h2>
+      {estados.map((estado) => (
+        <div key={estado} className="mb-6">
+          <h3 className="text-xl font-semibold capitalize mb-2">{estado}:</h3>
+          {lista.filter((p) => p.attributes.estado === estado).length === 0 ? (
+            <p className="text-sm text-gray-500">No hay pedidos en este estado.</p>
+          ) : (
+            <div className="grid gap-4">
+              {lista
+                .filter((p) => p.attributes.estado === estado)
+                .map((p) => {
+                  const productos = p.attributes.pedido_productos?.data || [];
+                  const cliente = p.attributes.reserva?.data?.attributes?.user?.data?.attributes?.username || "Anónimo";
+                  const total = productos.reduce((sum, pp) => {
+                    const precio = pp.attributes.producto?.data?.attributes?.precio || 0;
+                    const cantidad = pp.attributes.cantidad || 0;
+                    return sum + precio * cantidad;
+                  }, 0);
+                  return (
+                    <Card key={p.id} className="p-4">
+                      <p><strong>Cliente:</strong> {cliente}</p>
+                      <p><strong>Fecha:</strong> {moment(p.attributes.fecha).format("DD/MM/YYYY HH:mm")}</p>
+                      <ul className="list-disc pl-5">
+                        {productos.map((pp) => (
+                          <li key={pp.id}>{pp.attributes.producto?.data?.attributes?.nombre || "Producto"} x{pp.attributes.cantidad}</li>
+                        ))}
+                      </ul>
+                      <p className="mt-2"><strong>Total:</strong> {total.toFixed(2)} €</p>
+                      <p><strong>Estado:</strong> {p.attributes.estado}</p>
+                      <div className="flex gap-2 mt-2">
+                        {p.attributes.estado !== "completo" && p.attributes.estado !== "cancelado" && (
+                          <Button onClick={() => avanzarEstado(p)}>Avanzar estado</Button>
+                        )}
+                        {p.attributes.estado !== "cancelado" && (
+                          <Button variant="destructive" onClick={() => cancelarPedido(p)}>Cancelar</Button>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderHistorico = () => (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Histórico - {moment(fechaHistorico).format("DD/MM/YYYY")}</h2>
+      <div className="mb-4">
+        <input
+          type="date"
+          value={fechaHistorico}
+          onChange={(e) => setFechaHistorico(e.target.value)}
+          max={moment().subtract(1, "day").format("YYYY-MM-DD")}
+          className="border rounded px-3 py-1"
+        />
+      </div>
+      {pedidosHistoricos.length === 0 ? (
+        <p className="text-sm text-gray-500">No hay pedidos para esta fecha.</p>
+      ) : (
+        <div className="grid gap-4">
+          {pedidosHistoricos.map((p) => {
+            const productos = p.attributes.pedido_productos?.data || [];
+            const cliente = p.attributes.reserva?.data?.attributes?.user?.data?.attributes?.username || "Anónimo";
+            const total = productos.reduce((sum, pp) => {
+              const precio = pp.attributes.producto?.data?.attributes?.precio || 0;
+              const cantidad = pp.attributes.cantidad || 0;
+              return sum + precio * cantidad;
+            }, 0);
+            return (
+              <Card key={p.id} className="p-4">
+                <p><strong>Cliente:</strong> {cliente}</p>
+                <p><strong>Fecha:</strong> {moment(p.attributes.fecha).format("DD/MM/YYYY HH:mm")}</p>
+                <ul className="list-disc pl-5">
+                  {productos.map((pp) => (
+                    <li key={pp.id}>{pp.attributes.producto?.data?.attributes?.nombre || "Producto"} x{pp.attributes.cantidad}</li>
+                  ))}
+                </ul>
+                <p className="mt-2"><strong>Total:</strong> {total.toFixed(2)} €</p>
+                <p><strong>Estado:</strong> {p.attributes.estado}</p>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -57,47 +165,17 @@ function CamareroPedidos() {
 
         <Tabs defaultValue="activos">
           <TabsList>
-            <TabsTrigger value="activos">Pedidos activos</TabsTrigger>
+            <TabsTrigger value="activos">Pedidos Activos</TabsTrigger>
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
           <TabsContent value="activos">
-            <div className="grid gap-6 mt-4">
-              {estados.map((estado) => (
-                <div key={estado}>
-                  <h2 className="text-xl font-semibold capitalize mb-2">{estado}:</h2>
-                  {pedidos.filter((p) => p.attributes.estado === estado).length === 0 ? (
-                    <p className="text-sm text-gray-500">No hay pedidos en este estado.</p>
-                  ) : (
-                    <div className="grid gap-4">
-                      {pedidos
-                        .filter((p) => p.attributes.estado === estado)
-                        .map((p) => {
-                          const productos = p.attributes.pedido_productos?.data || [];
-                          const cliente = p.attributes.reserva?.data?.attributes?.cliente?.data?.attributes?.username || "Anónimo";
-                          const total = productos.reduce((sum, pp) => {
-                            const precio = pp.attributes.producto?.data?.attributes?.precio || 0;
-                            const cantidad = pp.attributes.cantidad || 0;
-                            return sum + precio * cantidad;
-                          }, 0);
-                          return (
-                            <Card key={p.id} className="p-4">
-                              <p><strong>Cliente:</strong> {cliente}</p>
-                              <p><strong>Fecha:</strong> {moment(p.attributes.fecha).format("DD/MM/YYYY HH:mm")}</p>
-                              <ul className="list-disc pl-5">
-                                {productos.map((pp) => (
-                                  <li key={pp.id}>{pp.attributes.producto?.data?.attributes?.nombre || "Producto"} x{pp.attributes.cantidad}</li>
-                                ))}
-                              </ul>
-                              <p className="mt-2"><strong>Total:</strong> {total.toFixed(2)} €</p>
-                              <p><strong>Estado:</strong> {p.attributes.estado}</p>
-                            </Card>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {renderFlujo(pedidosManana, "Turno Mañana")}
+            {moment().hour() >= 17 && renderFlujo(pedidosNoche, "Turno Noche")}
+          </TabsContent>
+
+          <TabsContent value="historico">
+            {renderHistorico()}
           </TabsContent>
         </Tabs>
       </div>
