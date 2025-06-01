@@ -28,7 +28,15 @@ function CamareroPedidos() {
       console.log("Pedido actualizado:", data);
       cargarPedidos();
     });
-    return () => socket.off("pedido_actualizado");
+
+    const interval = setInterval(() => {
+      cargarPedidos();
+    }, 5000); // cada 5 segundos, igual que en cocina
+
+    return () => {
+      socket.off("pedido_actualizado");
+      clearInterval(interval);
+    };
   }, []);
 
   const avanzarEstado = async (pedido) => {
@@ -60,7 +68,6 @@ function CamareroPedidos() {
   const pedidosHistoricos = pedidos.filter((p) => moment(p.attributes.fecha).isSame(fechaHistorico, "day"));
   const pedidosManana = pedidosHoy.filter((p) => moment(p.attributes.fecha).hour() < 17);
   const pedidosNoche = pedidosHoy.filter((p) => moment(p.attributes.fecha).hour() >= 17);
-  const esDespuesDe17 = moment().hour() >= 17;
 
   const renderFlujo = (lista, turno) => (
     <div className="mb-8">

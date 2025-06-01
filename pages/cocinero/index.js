@@ -19,7 +19,7 @@ function VistaCocinero() {
 
   const fetchPedidos = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/pedidos?populate[reserva][populate][cliente]=true&populate[pedido_productos][populate]=producto.receta.receta_ingredientes.ingrediente`);
+      const res = await fetch(`${API_URL}/api/pedidos?populate[reserva][populate][user]=true&populate[pedido_productos][populate]=producto.receta.receta_ingredientes.ingrediente`);
       const data = await res.json();
       setPedidos(data.data);
     } catch (error) {
@@ -73,7 +73,7 @@ function VistaCocinero() {
   const renderPedidos = (lista, color) => (
     lista.length > 0 ? lista.map((pedido) => {
       const estado = pedido.attributes.estado;
-      const cliente = pedido.attributes.reserva?.data?.attributes?.cliente?.data?.attributes?.username || "Sin cliente";
+      const cliente = pedido.attributes.reserva?.data?.attributes?.user?.data?.attributes?.username || "Sin cliente";
       const tiempo = tiempoDesdeCreacion(pedido.attributes.createdAt);
       const pedidoProductos = pedido.attributes.pedido_productos?.data || [];
       let siguienteEstado = null;
